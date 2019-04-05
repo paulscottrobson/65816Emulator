@@ -1,0 +1,165 @@
+// ******************************************************************************************
+// 					This code is inserted after #include "cpumacro.h"
+// ******************************************************************************************
+
+//
+//		Globals
+//
+struct SICPU ICPU;
+struct SRegisters Registers;
+struct SCPUState CPU;
+
+//
+//		Hacks to make things work.
+//
+uint8 IRQJunk[256];
+uint8 OpenBus = 0;
+
+//
+//		Various routines that are defined, just to shut the compiler up.
+//
+void S9xDoHEventProcessing() {}
+void S9xSetBSX(unsigned char x,unsigned int y) {}
+void S9xSetSetaDSP(unsigned char x, unsigned int y) {}
+void S9xSetST018(unsigned char x, unsigned int y) {}
+void S9xSetOBC1(unsigned char x, unsigned short y) {}
+void S9xSetDSP(unsigned char x, unsigned short y) {}
+void S9xSetC4(unsigned char x, unsigned short y) {}
+void S9xSetCPU(unsigned char x, unsigned short y) {}
+void S9xSetPPU(unsigned char x, unsigned short y) {}
+
+uint8 S9xGetPPU(uint16 x) { return 0; }
+uint8 S9xGetBSX(unsigned int x) { return 0; }
+uint8 S9xGetST018(unsigned int x) { return 0; }
+uint8 S9xGetSetaDSP(unsigned int x) { return 0; }
+uint8 S9xGetOBC1(unsigned short x) { return 0; }
+uint8 S9xGetC4(unsigned short x) { return 0; }
+uint8 S9xGetCPU(unsigned short x) { return 0; }
+uint8 S9xGetDSP(unsigned short x) { return 0; }
+uint8 S9xGetSPC7110(unsigned short x) { return 0; }
+uint8 S9xGetSPC7110Byte(unsigned int x) { return 0; }
+
+uint8 *S9xGetBasePointerC4(unsigned short x) { return &OpenBus; }
+uint8 *S9xGetBasePointerOBC1(unsigned short x) { return &OpenBus; }
+uint8 *S9xGetBasePointerBSX(unsigned int x) { return &OpenBus; }
+uint8 *S9xGetBasePointerSPC7110(unsigned int x) { return &OpenBus; }
+
+//
+//		Table of lengths for each instruction.
+//
+uint8 S9xOpLengthsM0X0[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 0
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 1
+	3, 2, 4, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 2
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 3
+	1, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 4
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 4, 3, 3, 4, // 5
+	1, 2, 3, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 6
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 7
+	2, 2, 3, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 8
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 9
+	3, 2, 3, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // A
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // B
+	3, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // C
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // D
+	3, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // E
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4  // F
+};
+
+uint8 S9xOpLengthsM0X1[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 0
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 1
+	3, 2, 4, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 2
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 3
+	1, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 4
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 4, 3, 3, 4, // 5
+	1, 2, 3, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 6
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 7
+	2, 2, 3, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 8
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 9
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // A
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // B
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // C
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // D
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // E
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4  // F
+};
+
+uint8 S9xOpLengthsM1X0[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 0
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 1
+	3, 2, 4, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 2
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 3
+	1, 2, 2, 2, 3, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 4
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 4, 3, 3, 4, // 5
+	1, 2, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 6
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 7
+	2, 2, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 8
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 9
+	3, 2, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // A
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // B
+	3, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // C
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // D
+	3, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // E
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4  // F
+};
+
+uint8 S9xOpLengthsM1X1[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 0
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 1
+	3, 2, 4, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 2
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 3
+	1, 2, 2, 2, 3, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 4
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 4, 3, 3, 4, // 5
+	1, 2, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 6
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 7
+	2, 2, 3, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // 8
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // 9
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // A
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // B
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // C
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4, // D
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // E
+	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4  // F
+};
+
+//
+//	Comes from cpu.cpp
+//
+
+void Reset65816(void) {
+
+	CPU.Cycles = 0;
+
+	Registers.SL = 0xff;
+	Registers.P.W = 0;
+	Registers.A.W = 0;
+	Registers.X.W = 0;
+	Registers.Y.W = 0;
+	SetFlags(MemoryFlag | IndexFlag | IRQ | Emulation);
+	ClearFlags(Decimal);
+
+	Registers.PBPC = 0;
+	Registers.PB = 0;
+	Registers.PCw = S9xGetWord(0xfffc);
+	OpenBus = Registers.PCh;
+	Registers.D.W = 0;
+	Registers.DB = 0;
+	Registers.SH = 1;
+	Registers.SL -= 3;
+	Registers.XH = 0;
+	Registers.YH = 0;
+
+	ClearFlags(Emulation);					// Hack into 65816 mode.
+	Registers.PBPC = 0x10000 				// Hacked start address for PC.
+}
+
+// ******************************************************************************************
